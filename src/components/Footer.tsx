@@ -1,6 +1,8 @@
 "use client";
 
-import { Twitter, MessageCircle } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { Twitter } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -9,9 +11,16 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center">
           {/* Logo/Brand */}
           <div className="mb-6 md:mb-0 flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">V</span>
-            </div>
+            <Link href="/" className="block shrink-0" aria-label="Viewheel home">
+              <Image
+                src="/viewheel-logo.svg"   // file in /public
+                alt="Viewheel logo"
+                width={48}
+                height={48}
+                className="h-12 w-12"
+                priority={false}
+              />
+            </Link>
             <div>
               <h3 className="text-2xl font-bold text-primary">VIEWHEEL</h3>
               <p className="text-muted-foreground">The first community-owned viewership network</p>
@@ -28,14 +37,7 @@ const Footer = () => {
             >
               <Twitter className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
             </a>
-            {/* <a
-              href="https://t.me/viewheel"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-10 h-10 bg-viewheel-card border border-viewheel-border rounded-full flex items-center justify-center hover:border-primary/50 hover:bg-primary/10 transition-all duration-300 group"
-            >
-              <MessageCircle className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-            </a> */}
+            {/* Telegram link can be re-enabled later */}
           </div>
         </div>
 

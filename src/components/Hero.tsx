@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { PlayCircle, Upload, ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 const Hero = () => {
   return (
@@ -45,14 +46,16 @@ const Hero = () => {
           </Button>
           
           <Button 
+            asChild
             size="lg" 
             variant="outline"
             className="group px-8 py-6 text-lg font-semibold bg-background/50 hover:bg-viewheel-card border-2 border-primary/50 hover:border-primary text-primary hover:text-primary-foreground hover:bg-primary transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/25"
-            onClick={() => window.open('https://forms.google.com', '_blank')}
           >
-            <Upload className="mr-2 h-6 w-6 group-hover:scale-110 transition-transform" />
-            Queue Your Ad
-            <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
+            <Link href="/app">
+              <Upload className="mr-2 h-6 w-6 group-hover:scale-110 transition-transform" />
+              Queue Your Ad
+              <ExternalLink className="ml-2 h-4 w-4 opacity-70" />
+            </Link>
           </Button>
         </div>
 
