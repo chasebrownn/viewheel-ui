@@ -1,4 +1,3 @@
-// src/app/app/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -11,6 +10,166 @@ import { WalletButton } from "@/components/wallet/WalletButton";
 const AppPage = () => {
   const { connected, publicKey } = useWallet();
   const [currentStep, setCurrentStep] = useState(1);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string>('');
+  const [isValidating, setIsValidating] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedTime, setSelectedTime] = useState<string>('');
+  const [timeframeError, setTimeframeError] = useState<string>('');
+  const [videoDuration, setVideoDuration] = useState<number>(0);
+
+  // Calculate cost based on video duration (1000 $VIEWS per minute)
+  const calculateCost = () => {
+    if (!videoDuration) return 0;
+    const minutes = Math.ceil(videoDuration / 60); // Round up to nearest minute
+    return minutes * 1000;
+  };
+
+  // Format duration for display
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Get current date in YYYY-MM-DD format for min date
+  const getCurrentDate = () => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
+  };
+
+  // Get max date (30 days from now)
+  const getMaxDate = () => {
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 30);
+    return maxDate.toISOString().split('T')[0];
+  };
+
+  // Validate selected datetime
+  const validateTimeframe = () => {
+    setTimeframeError('');
+    
+    if (!selectedDate || !selectedTime) {
+      setTimeframeError('Please select both date and time');
+      return false;
+    }
+
+    const selectedDateTime = new Date(`${selectedDate}T${selectedTime}`);
+    const now = new Date();
+    
+    // Check if selected time is in the past
+    if (selectedDateTime <= now) {
+      setTimeframeError('Selected time must be in the future');
+      return false;
+    }
+
+    // Check if selected time is at least 2 hours from now
+    const twoHoursFromNow = new Date(now.getTime() + (2 * 60 * 60 * 1000));
+    if (selectedDateTime < twoHoursFromNow) {
+      setTimeframeError('Please select a time at least 2 hours from now');
+      return false;
+    }
+
+    return true;
+  };
+
+  // Format selected datetime for display
+  const formatSelectedDateTime = () => {
+    if (!selectedDate || !selectedTime) return '';
+    
+    const dateTime = new Date(`${selectedDate}T${selectedTime}`);
+    return dateTime.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+  };
+
+  // Function to get video duration
+  const getVideoDuration = (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        resolve(video.duration);
+      };
+      
+      video.onerror = () => {
+        reject(new Error('Failed to load video metadata'));
+      };
+      
+      video.src = URL.createObjectURL(file);
+    });
+  };
+
+  // File validation function
+  const validateFile = async (file: File) => {
+    setIsValidating(true);
+    setUploadError('');
+
+    try {
+      // Check file type
+      if (file.type !== 'video/mp4') {
+        throw new Error('File must be in MP4 format');
+      }
+
+      // Check file size (1GB = 1,073,741,824 bytes)
+      if (file.size > 1073741824) {
+        throw new Error('File size must be less than 1GB');
+      }
+
+      // Check video duration
+      const duration = await getVideoDuration(file);
+      if (duration > 300) { // 5 minutes = 300 seconds
+        throw new Error('Video duration must be less than 5 minutes');
+      }
+
+      // If all validations pass
+      setSelectedFile(file);
+      setVideoDuration(duration);
+      setUploadError('');
+      return true;
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'File validation failed');
+      setSelectedFile(null);
+      return false;
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (file: File) => {
+    await validateFile(file);
+  };
+
+  // Handle drag and drop
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileSelect(files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  // Format file size for display
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const steps = [
     {
@@ -137,23 +296,88 @@ const AppPage = () => {
                     <div className="text-center">
                       <h3 className="text-2xl font-bold text-foreground mb-4">Upload Your Video</h3>
                       <p className="text-muted-foreground mb-8">
-                        Upload your advertisement video in MP4 format (max 100MB)
+                        Upload your advertisement video in MP4 format (max 1GB, max 5 minutes)
                       </p>
                       
-                      <div className="border-2 border-dashed border-viewheel-border rounded-lg p-12 hover:border-primary/50 transition-colors">
-                        <Upload className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-muted-foreground mb-4">
-                          Drag and drop your video here, or click to browse
-                        </p>
-                        <Button variant="outline" className="border-primary/50 hover:bg-primary hover:text-primary-foreground">
-                          Choose File
-                        </Button>
+                      {/* File Upload Area */}
+                      <div 
+                        className={`border-2 border-dashed rounded-lg p-12 transition-colors ${
+                          uploadError 
+                            ? 'border-red-500 bg-red-500/5' 
+                            : selectedFile
+                              ? 'border-primary bg-primary/5'
+                              : 'border-viewheel-border hover:border-primary/50'
+                        }`}
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                      >
+                        {isValidating ? (
+                          <div className="text-center">
+                            <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                            <p className="text-muted-foreground">Validating video...</p>
+                          </div>
+                        ) : selectedFile ? (
+                          <div className="text-center">
+                            <Check className="h-16 w-16 text-primary mx-auto mb-4" />
+                            <p className="text-foreground font-medium mb-2">{selectedFile.name}</p>
+                            <p className="text-muted-foreground text-sm mb-4">
+                              Size: {formatFileSize(selectedFile.size)}
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              className="border-primary/50 hover:bg-primary hover:text-primary-foreground"
+                              onClick={() => {
+                                setSelectedFile(null);
+                                setUploadError('');
+                              }}
+                            >
+                              Choose Different File
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="text-center">
+                            <Upload className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground mb-4">
+                              Drag and drop your MP4 video here, or click to browse
+                            </p>
+                            <p className="text-sm text-muted-foreground mb-4">
+                              Requirements: MP4 format • Max 1GB • Max 5 minutes
+                            </p>
+                            <input
+                              type="file"
+                              accept="video/mp4"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleFileSelect(file);
+                              }}
+                              className="hidden"
+                              id="file-upload"
+                            />
+                            <label htmlFor="file-upload">
+                              <Button 
+                                variant="outline" 
+                                className="border-primary/50 hover:bg-primary hover:text-primary-foreground cursor-pointer"
+                                asChild
+                              >
+                                <span>Choose File</span>
+                              </Button>
+                            </label>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Error Message */}
+                      {uploadError && (
+                        <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                          <p className="text-red-400 text-sm font-medium">{uploadError}</p>
+                        </div>
+                      )}
                       
                       <div className="mt-8">
                         <Button 
                           onClick={() => setCurrentStep(2)}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+                          disabled={!selectedFile || isValidating}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Continue to Timeframe
                         </Button>
@@ -165,25 +389,68 @@ const AppPage = () => {
                     <div className="text-center">
                       <h3 className="text-2xl font-bold text-foreground mb-4">Choose Your Timeframe</h3>
                       <p className="text-muted-foreground mb-8">
-                        Select when you want your advertisement to air on the livestream
+                        Select the date and time you want your advertisement to air on the livestream
                       </p>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
-                        <Card className="border-viewheel-border hover:border-primary/50 cursor-pointer transition-all">
-                          <CardContent className="p-6">
-                            <h4 className="font-semibold text-foreground mb-2">Peak Hours</h4>
-                            <p className="text-muted-foreground text-sm mb-2">6 PM - 12 AM EST</p>
-                            <p className="text-primary font-bold">Higher visibility</p>
-                          </CardContent>
-                        </Card>
-                        
-                        <Card className="border-viewheel-border hover:border-primary/50 cursor-pointer transition-all">
-                          <CardContent className="p-6">
-                            <h4 className="font-semibold text-foreground mb-2">Off-Peak Hours</h4>
-                            <p className="text-muted-foreground text-sm mb-2">12 AM - 6 PM EST</p>
-                            <p className="text-primary font-bold">Lower cost</p>
-                          </CardContent>
-                        </Card>
+                      <div className="max-w-md mx-auto mb-8">
+                        <div className="grid grid-cols-1 gap-6">
+                          {/* Date Selection */}
+                          <div className="text-left">
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              Date
+                            </label>
+                            <input
+                              type="date"
+                              value={selectedDate}
+                              onChange={(e) => setSelectedDate(e.target.value)}
+                              min={getCurrentDate()}
+                              max={getMaxDate()}
+                              className="w-full px-4 py-3 bg-viewheel-card border border-viewheel-border rounded-lg text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                            />
+                          </div>
+
+                          {/* Time Selection */}
+                          <div className="text-left">
+                            <label className="block text-sm font-medium text-foreground mb-2">
+                              Time (Your Local Time)
+                            </label>
+                            <input
+                              type="time"
+                              value={selectedTime}
+                              onChange={(e) => setSelectedTime(e.target.value)}
+                              className="w-full px-4 py-3 bg-viewheel-card border border-viewheel-border rounded-lg text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Selected DateTime Preview */}
+                        {selectedDate && selectedTime && !timeframeError && (
+                          <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                            <p className="text-sm text-muted-foreground mb-1">Selected Airtime:</p>
+                            <p className="text-foreground font-medium">{formatSelectedDateTime()}</p>
+                          </div>
+                        )}
+
+                        {/* Error Message */}
+                        {timeframeError && (
+                          <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+                            <p className="text-red-400 text-sm font-medium">{timeframeError}</p>
+                          </div>
+                        )}
+
+                        {/* Pricing Info */}
+                        <div className="mt-6 p-4 bg-viewheel-card/50 border border-viewheel-border rounded-lg">
+                          <h4 className="text-sm font-medium text-foreground mb-2">Pricing Information</h4>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            <p>• Simple pricing: <span className="text-primary font-semibold">1,000 $VIEWS per minute</span></p>
+                            <p>• Duration is rounded up to the nearest minute</p>
+                            {selectedFile && videoDuration > 0 && (
+                              <p className="text-foreground font-medium mt-2">
+                                Your video ({formatDuration(videoDuration)}) = <span className="text-primary">{calculateCost().toLocaleString()} $VIEWS</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="mt-8 flex gap-4 justify-center">
@@ -195,8 +462,13 @@ const AppPage = () => {
                           Back
                         </Button>
                         <Button 
-                          onClick={() => setCurrentStep(3)}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
+                          onClick={() => {
+                            if (validateTimeframe()) {
+                              setCurrentStep(3);
+                            }
+                          }}
+                          disabled={!selectedDate || !selectedTime}
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Continue to Payment
                         </Button>
@@ -217,19 +489,35 @@ const AppPage = () => {
                         <div className="space-y-4">
                           <div>
                             <p className="text-muted-foreground text-sm">Video</p>
-                            <p className="text-foreground font-medium">advertisement.mp4</p>
+                            <p className="text-foreground font-medium">
+                              {selectedFile ? selectedFile.name : 'advertisement.mp4'}
+                            </p>
+                            {selectedFile && (
+                              <p className="text-muted-foreground text-xs">
+                                {formatFileSize(selectedFile.size)}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <p className="text-muted-foreground text-sm">Timeframe</p>
-                            <p className="text-foreground font-medium">Peak Hours (6 PM - 12 AM EST)</p>
+                            <p className="text-foreground font-medium">
+                              {selectedDate && selectedTime ? formatSelectedDateTime() : 'Peak Hours (6 PM - 12 AM EST)'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground text-sm">Duration</p>
-                            <p className="text-foreground font-medium">30 seconds</p>
+                            <p className="text-foreground font-medium">
+                              {videoDuration > 0 ? formatDuration(videoDuration) : '30 seconds'}
+                            </p>
                           </div>
                           <div className="border-t border-viewheel-border pt-4">
                             <p className="text-muted-foreground text-sm">Total Cost</p>
-                            <p className="text-3xl font-bold text-primary">1,250 $VIEWS</p>
+                            <p className="text-3xl font-bold text-primary">
+                              {calculateCost().toLocaleString()} $VIEWS
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {Math.ceil((videoDuration || 30) / 60)} minute(s) × 1,000 $VIEWS
+                            </p>
                           </div>
                         </div>
                       </div>

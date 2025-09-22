@@ -13,7 +13,7 @@ const Footer = () => {
           <div className="mb-6 md:mb-0 flex items-center gap-3">
             <Link href="/" className="block shrink-0" aria-label="Viewheel home">
               <Image
-                src="/viewheel-logo.svg"   // file in /public
+                src="/viewheel-logo.svg"
                 alt="Viewheel logo"
                 width={48}
                 height={48}
