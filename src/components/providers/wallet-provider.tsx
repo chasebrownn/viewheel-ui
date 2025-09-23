@@ -19,10 +19,17 @@ interface WalletContextProviderProps {
 
 export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children }) => {
     // The network can be set to 'devnet', 'testnet', or 'mainnet-beta'.
-    const network = WalletAdapterNetwork.Devnet;
+    //const network = WalletAdapterNetwork.Devnet;
 
     // You can also provide a custom RPC endpoint.
-    const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+    //const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+
+    const envNet = (process.env.NEXT_PUBLIC_SOLANA_NETWORK as WalletAdapterNetwork) || WalletAdapterNetwork.Devnet;
+    const customRpc = process.env.NEXT_PUBLIC_SOLANA_RPC;
+    const endpoint = useMemo(
+      () => customRpc || clusterApiUrl(envNet),
+      [customRpc, envNet]
+    );
 
     const wallets = useMemo(
         () => [

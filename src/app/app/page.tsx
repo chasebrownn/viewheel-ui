@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Clock, DollarSign, Send, Wallet, Check } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
+import ViewsCheckout from "@/components/payments/ViewsCheckout";
 
 const AppPage = () => {
-  const { connected, publicKey } = useWallet();
+  const { connected } = useWallet(); // remove if truly unused in this file
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string>('');
@@ -251,7 +252,7 @@ const AppPage = () => {
               {/* Progress Steps */}
               <div className="mb-12">
                 <div className="flex flex-col lg:flex-row gap-6">
-                  {steps.map((step, index) => (
+                  {steps.map((step) => (
                     <div key={step.number} className="flex-1">
                       <Card className={`border-2 transition-all duration-300 ${
                         currentStep === step.number 
@@ -522,10 +523,17 @@ const AppPage = () => {
                         </div>
                       </div>
                       
-                      {/* Helios Placeholder */}
-                      <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-lg p-6 mb-8">
-                        <p className="text-foreground font-semibold mb-2">Helios Payment Widget</p>
-                        <p className="text-muted-foreground text-sm">Payment integration coming soon</p>
+                      {/* $VIEWS Checkout */}
+                      <div className="mb-8">
+                        <ViewsCheckout
+                          amount={calculateCost()}  // number of $VIEWS
+                          onPaid={(_sig) => {
+                            // (A) TODO: upload the file + submit timeslot to your API here
+                            //     e.g., await fetch('/api/submit-ad', { method:'POST', body: FormData })
+                            // (B) then advance or show a “submitted” screen
+                            setCurrentStep(3); // remain on step with success toasts, or push a “Done” panel
+                          }}
+                        />
                       </div>
                       
                       <div className="mt-8 flex gap-4 justify-center">
@@ -542,6 +550,7 @@ const AppPage = () => {
                           <Send className="mr-2 h-4 w-4" />
                           Pay & Submit Advertisement
                         </Button>
+                        {/* The Pay button now lives inside ViewsCheckout. Keep this space clean. */}
                       </div>
                     </div>
                   )}

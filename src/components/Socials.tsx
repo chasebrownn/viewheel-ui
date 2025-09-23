@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Twitter, MessageCircle, ExternalLink, Users } from "lucide-react";
+import { Twitter, ExternalLink, Users } from "lucide-react";
 
 const Socials = () => {
   return (
