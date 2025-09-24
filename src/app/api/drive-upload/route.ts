@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
 
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range, // e.g., "Sheet1!A:D"
+        range,
         valueInputOption: "USER_ENTERED",
         insertDataOption: "INSERT_ROWS",
         requestBody: {
@@ -135,29 +135,41 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const meta = await sheets.spreadsheets.get({ spreadsheetId });
-      const sheet = meta.data.sheets?.find(s => s.properties?.title === "Sheet1");
-      const sheetId = sheet?.properties?.sheetId!;
+      const sheetMeta = await sheets.spreadsheets.get({
+        spreadsheetId: spreadsheetId,
+        ranges: [range.split("!")[0]], // "Sheet1"
+        includeGridData: false,
+      });
 
+      // Safely resolve the sheetId (tab id)
+      const firstSheet = sheetMeta.data.sheets?.[0];
+      const sheetId = firstSheet?.properties?.sheetId;
+      if (sheetId == null) {
+        throw new Error("Could not resolve sheetId for sorting.");
+      }
+
+      // Sort rows by the “Day/Time (PST)” column (e.g., column D -> index 3) ascending
       await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
+        spreadsheetId: spreadsheetId,
         requestBody: {
-            requests: [{
-            sortRange: {
+          requests: [
+            {
+              sortRange: {
                 range: {
-                sheetId,
-                startRowIndex: 1,   // row 2 (0-based), skip header
-                startColumnIndex: 0,// col A
-                endColumnIndex: 4,  // through col D (exclusive)
+                  sheetId,
+                  // adjust start/end rows/cols to exclude header row
+                  startRowIndex: 1,  // skip header row
+                  startColumnIndex: 0,
+                  endColumnIndex: 4, // A:D
                 },
-                sortSpecs: [{
-                dimensionIndex: 3,  // column D is index 3 (0-based)
-                sortOrder: "ASCENDING"
-                }]
-            }
-            }]
-        }
-        });
+                sortSpecs: [
+                  { dimensionIndex: 3, sortOrder: "ASCENDING" }, // D column
+                ],
+              },
+            },
+          ],
+        },
+      });
     }
 
     return NextResponse.json({ ok: true, file: created.data });

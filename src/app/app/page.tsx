@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Clock, DollarSign, Send, Wallet, Check } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import ViewsCheckout from "@/components/payments/ViewsCheckout";
+import { useRouter } from "next/navigation";
 
 const AppPage = () => {
   const { connected, publicKey } = useWallet();
@@ -18,6 +19,7 @@ const AppPage = () => {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [timeframeError, setTimeframeError] = useState<string>('');
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const router = useRouter();
 
   // Calculate cost based on video duration (1000 $VIEWS per minute)
   const calculateCost = () => {
@@ -557,6 +559,7 @@ const AppPage = () => {
                               (await import("sonner")).toast.success("Upload complete ✅");
                               (await import("sonner")).toast.dismiss(uploading);
                               // Optionally move to a “Done” screen
+                              router.push("/app/success");
                               // setCurrentStep(4);
                             } catch (err: unknown) {
                               const { toast } = await import("sonner");
