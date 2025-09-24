@@ -19,6 +19,7 @@ const AppPage = () => {
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [timeframeError, setTimeframeError] = useState<string>('');
   const [videoDuration, setVideoDuration] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
 
   // Calculate cost based on video duration (1000 $VIEWS per minute)
@@ -552,8 +553,10 @@ const AppPage = () => {
                       <div className="mb-8">
                         <ViewsCheckout
                           amount={calculateCost()}  // number of $VIEWS
+                          disabled={isUploading}
                           onPaid={async (sig) => {
                             try {
+                              setIsUploading(true);
                               const uploading = (await import("sonner")).toast.loading("Uploading video to Drive…");
                               await uploadToDrive(sig);
                               (await import("sonner")).toast.success("Upload complete ✅");
@@ -565,6 +568,7 @@ const AppPage = () => {
                               const { toast } = await import("sonner");
                               const msg = err instanceof Error ? err.message : String(err);
                               toast.error("Upload failed", { description: msg });
+                              setIsUploading(false);
                             }
                           }}
                         />

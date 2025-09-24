@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         requestBody: {
           requests: [
             {
-              sortRange: {
+              sortRange: { 
                 range: {
                   sheetId,
                   // adjust start/end rows/cols to exclude header row

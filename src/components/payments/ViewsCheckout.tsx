@@ -23,6 +23,8 @@ export type ViewsCheckoutProps = {
   treasuryAddress?: string;
   /** Line item label */
   label?: string;
+  disabled?: boolean;
+  beforePay?: () => Promise<void>;
 };
 
 function errorMessage(e: unknown): string {
@@ -40,6 +42,8 @@ export default function ViewsCheckout({
   mintAddress = process.env.NEXT_PUBLIC_VIEWS_MINT || "",
   treasuryAddress = process.env.NEXT_PUBLIC_TREASURY || "",
   label = "Livestream Ad Slot",
+  disabled = false,
+  beforePay,
 }: ViewsCheckoutProps) {
   const { connection } = useConnection();
   const { publicKey, connected, sendTransaction } = useWallet();
@@ -140,7 +144,21 @@ export default function ViewsCheckout({
     amountInBaseUnits != null;
 
   const handlePay = useCallback(async () => {
+    if (loading) return; // guard double-taps
     if (!canPay || !publicKey || !mint || !treasury || amountInBaseUnits == null) return;
+
+    try {
+      // OPTIONAL step (see section 2): do something BEFORE paying (e.g., pre-upload)
+      if (typeof beforePay === "function") {
+        setLoading(true);
+        await beforePay(); // throws if it fails; we abort the payment
+        setLoading(false);
+      }
+    } catch (e) {
+      setLoading(false);
+      toast.error("Cannot proceed to payment", { description: errorMessage(e) });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -207,6 +225,8 @@ export default function ViewsCheckout({
     onPaid,
     refreshBalance,
     userBalanceRaw,
+    beforePay,
+    loading
   ]);
 
   return (
@@ -253,7 +273,7 @@ export default function ViewsCheckout({
         <div className="mt-6">
           <Button
             onClick={handlePay}
-            disabled={!canPay || loading || !treasuryAddress}
+            disabled={!canPay || loading || !treasuryAddress || disabled}
             className="w-full md:w-auto px-8"
           >
             {loading ? "Processing…" : `Pay ${amount.toLocaleString()} $VIEWS`}
