@@ -9,7 +9,7 @@ import { WalletButton } from "@/components/wallet/WalletButton";
 import ViewsCheckout from "@/components/payments/ViewsCheckout";
 
 const AppPage = () => {
-  const { connected } = useWallet(); // remove if truly unused in this file
+  const { connected, publicKey } = useWallet();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string>('');
@@ -44,6 +44,29 @@ const AppPage = () => {
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 30);
     return maxDate.toISOString().split('T')[0];
+  };
+
+  // helper: upload to our API
+  const uploadToDrive = async (txSig: string) => {
+    if (!selectedFile) return;
+    const fd = new FormData();
+    fd.append("file", selectedFile);
+    fd.append("name", selectedFile.name);
+    if (selectedDate && selectedTime) {
+      fd.append("whenISO", new Date(`${selectedDate}T${selectedTime}`).toISOString());
+    }
+    fd.append("tx", txSig);
+    // wallet is available via wallet adapter:
+    // import { useWallet } from '@solana/wallet-adapter-react';
+    // already at top of file; we can read publicKey here
+    fd.append("wallet", publicKey?.toBase58() ?? "");
+
+    const res = await fetch("/api/drive-upload", { method: "POST", body: fd });
+    if (!res.ok) {
+      const { error } = await res.json().catch(() => ({ error: "Upload failed" }));
+      throw new Error(error || "Upload failed");
+    }
+    return res.json();
   };
 
   // Validate selected datetime
@@ -527,11 +550,19 @@ const AppPage = () => {
                       <div className="mb-8">
                         <ViewsCheckout
                           amount={calculateCost()}  // number of $VIEWS
-                          onPaid={(_sig) => {
-                            // (A) TODO: upload the file + submit timeslot to your API here
-                            //     e.g., await fetch('/api/submit-ad', { method:'POST', body: FormData })
-                            // (B) then advance or show a “submitted” screen
-                            setCurrentStep(3); // remain on step with success toasts, or push a “Done” panel
+                          onPaid={async (sig) => {
+                            try {
+                              const uploading = (await import("sonner")).toast.loading("Uploading video to Drive…");
+                              await uploadToDrive(sig);
+                              (await import("sonner")).toast.success("Upload complete ✅");
+                              (await import("sonner")).toast.dismiss(uploading);
+                              // Optionally move to a “Done” screen
+                              // setCurrentStep(4);
+                            } catch (err: unknown) {
+                              const { toast } = await import("sonner");
+                              const msg = err instanceof Error ? err.message : String(err);
+                              toast.error("Upload failed", { description: msg });
+                            }
                           }}
                         />
                       </div>

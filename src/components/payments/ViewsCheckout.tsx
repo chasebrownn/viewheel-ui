@@ -1,4 +1,3 @@
-// src/components/payments/ViewsCheckout.tsx
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
