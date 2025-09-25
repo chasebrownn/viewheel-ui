@@ -557,7 +557,7 @@ const AppPage = () => {
                           onPaid={async (sig) => {
                             try {
                               setIsUploading(true);
-                              const uploading = (await import("sonner")).toast.loading("Uploading video to Drive…");
+                              const uploading = (await import("sonner")).toast.loading("Uploading video…");
                               await uploadToDrive(sig);
                               (await import("sonner")).toast.success("Upload complete ✅");
                               (await import("sonner")).toast.dismiss(uploading);

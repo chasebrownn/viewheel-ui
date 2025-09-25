@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     // 2) Append a row to the Google Sheet
     const spreadsheetId = process.env.SHEETS_SPREADSHEET_ID;
-    const range = process.env.SHEETS_RANGE || "Sheet1!A:D";
+    const range = process.env.SHEETS_RANGE || "Sheet1!A:E";
 
     if (spreadsheetId) {
       const sheets = google.sheets({ version: "v4", auth });
@@ -130,8 +130,8 @@ export async function POST(req: NextRequest) {
         valueInputOption: "USER_ENTERED",
         insertDataOption: "INSERT_ROWS",
         requestBody: {
-          // Columns: mp4 name | size | user_wallet_address | day/time (PST)
-          values: [[name, sizeHuman, wallet, pstWhen]],
+          // Columns: mp4 name | size | user_wallet_address | day/time (PST) | tx_signature
+          values: [[name, sizeHuman, wallet, pstWhen, tx]],
         },
       });
 
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
                   // adjust start/end rows/cols to exclude header row
                   startRowIndex: 1,  // skip header row
                   startColumnIndex: 0,
-                  endColumnIndex: 4, // A:D
+                  endColumnIndex: 5, // A:E
                 },
                 sortSpecs: [
                   { dimensionIndex: 3, sortOrder: "ASCENDING" }, // D column
