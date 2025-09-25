@@ -78,11 +78,11 @@ const Socials = () => {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2">1000+</div>
+              <div className="text-3xl font-bold text-primary mb-2">100+</div>
               <div className="text-muted-foreground">Community Members</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-2">500+</div>
+              <div className="text-3xl font-bold text-primary mb-2">0</div>
               <div className="text-muted-foreground">Token Holders</div>
             </div>
             <div className="text-center">

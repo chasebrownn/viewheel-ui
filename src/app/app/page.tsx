@@ -8,6 +8,7 @@ import { Upload, Clock, DollarSign, Send, Wallet, Check } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import ViewsCheckout from "@/components/payments/ViewsCheckout";
 import { useRouter } from "next/navigation";
+import Header from "@/components/Header";
 
 const AppPage = () => {
   const { connected, publicKey } = useWallet();
@@ -225,22 +226,7 @@ const AppPage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header with Wallet Connect */}
-      <header className="fixed top-0 left-0 right-0 z-50 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center border border-primary animate-float">
-              <span className="text-primary font-bold">V</span>
-            </div>
-            <span className="ml-3 text-2xl font-bold text-primary">VIEWHEEL</span>
-          </div>
-          
-          {!connected ? (
-            <WalletButton variant="header" />
-          ) : (
-            <WalletButton variant="header" />
-          )}
-        </div>
-      </header>
+      <Header rightSlot={<WalletButton variant="header" />} />
 
       {/* Main Content */}
       <main className="pt-24 px-4">
