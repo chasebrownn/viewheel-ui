@@ -509,86 +509,90 @@ const AppPage = () => {
                       <p className="text-muted-foreground mb-8">
                         Review your advertisement details and complete payment to submit
                       </p>
-                      
-                      {/* Review Section */}
-                      <div className="bg-viewheel-card/50 border border-viewheel-border rounded-xl p-6 text-left max-w-md mx-auto mb-8">
-                        <h4 className="text-lg font-semibold text-foreground mb-4 text-center">Advertisement Summary</h4>
-                        <div className="space-y-4">
-                          <div>
-                            <p className="text-muted-foreground text-sm">Video</p>
-                            <p className="text-foreground font-medium">
-                              {selectedFile ? selectedFile.name : 'advertisement.mp4'}
-                            </p>
-                            {selectedFile && (
-                              <p className="text-muted-foreground text-xs">
-                                {formatFileSize(selectedFile.size)}
+
+                      {/* Advertisement Summary (now *is* the checkout) */}
+                      <Card className="bg-viewheel-card border-viewheel-border max-w-md mx-auto">
+                        <CardContent className="p-6">
+                          <h4 className="text-lg font-semibold text-foreground mb-4 text-center">
+                            Advertisement Summary
+                          </h4>
+
+                          <div className="space-y-4 text-left">
+                            <div>
+                              <p className="text-muted-foreground text-sm">Video</p>
+                              <p className="text-foreground font-medium">
+                                {selectedFile ? selectedFile.name : "advertisement.mp4"}
                               </p>
-                            )}
+                              {selectedFile && (
+                                <p className="text-muted-foreground text-xs">
+                                  {formatFileSize(selectedFile.size)}
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <p className="text-muted-foreground text-sm">Timeframe</p>
+                              <p className="text-foreground font-medium">
+                                {selectedDate && selectedTime
+                                  ? formatSelectedDateTime()
+                                  : "Peak Hours (6 PM - 12 AM EST)"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-muted-foreground text-sm">Duration</p>
+                              <p className="text-foreground font-medium">
+                                {videoDuration > 0 ? formatDuration(videoDuration) : "—"}
+                              </p>
+                            </div>
+
+                            <div className="border-t border-viewheel-border pt-4">
+                              <p className="text-muted-foreground text-sm">Total Cost</p>
+                              <p className="text-3xl font-bold text-primary">
+                                {calculateCost().toLocaleString()} $VIEWS
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {Math.ceil((videoDuration || 30) / 60)} minute(s) × 1,000 $VIEWS
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground text-sm">Timeframe</p>
-                            <p className="text-foreground font-medium">
-                              {selectedDate && selectedTime ? formatSelectedDateTime() : 'Peak Hours (6 PM - 12 AM EST)'}
-                            </p>
+
+                          {/* Checkout lives inside the summary */}
+                          <div className="mt-6">
+                            <ViewsCheckout
+                              amount={calculateCost()}
+                              disabled={isUploading}
+                              onPaid={async (sig) => {
+                                try {
+                                  setIsUploading(true);
+                                  const uploading = (await import("sonner")).toast.loading(
+                                    "Uploading video…"
+                                  );
+                                  await uploadToDrive(sig);
+                                  (await import("sonner")).toast.success("Upload complete ✅");
+                                  (await import("sonner")).toast.dismiss(uploading);
+                                  router.push("/app/success");
+                                } catch (err: unknown) {
+                                  const { toast } = await import("sonner");
+                                  const msg = err instanceof Error ? err.message : String(err);
+                                  toast.error("Upload failed", { description: msg });
+                                  setIsUploading(false);
+                                }
+                              }}
+                            />
                           </div>
-                          <div>
-                            <p className="text-muted-foreground text-sm">Duration</p>
-                            <p className="text-foreground font-medium">
-                              {videoDuration > 0 ? formatDuration(videoDuration) : '30 seconds'}
-                            </p>
-                          </div>
-                          <div className="border-t border-viewheel-border pt-4">
-                            <p className="text-muted-foreground text-sm">Total Cost</p>
-                            <p className="text-3xl font-bold text-primary">
-                              {calculateCost().toLocaleString()} $VIEWS
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {Math.ceil((videoDuration || 30) / 60)} minute(s) × 1,000 $VIEWS
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* $VIEWS Checkout */}
-                      <div className="mb-8">
-                        <ViewsCheckout
-                          amount={calculateCost()}  // number of $VIEWS
-                          disabled={isUploading}
-                          onPaid={async (sig) => {
-                            try {
-                              setIsUploading(true);
-                              const uploading = (await import("sonner")).toast.loading("Uploading video…");
-                              await uploadToDrive(sig);
-                              (await import("sonner")).toast.success("Upload complete ✅");
-                              (await import("sonner")).toast.dismiss(uploading);
-                              // Optionally move to a “Done” screen
-                              router.push("/app/success");
-                              // setCurrentStep(4);
-                            } catch (err: unknown) {
-                              const { toast } = await import("sonner");
-                              const msg = err instanceof Error ? err.message : String(err);
-                              toast.error("Upload failed", { description: msg });
-                              setIsUploading(false);
-                            }
-                          }}
-                        />
-                      </div>
-                      
+                        </CardContent>
+                      </Card>
+
+                      {/* Bottom actions: keep only Back */}
                       <div className="mt-8 flex gap-4 justify-center">
-                        <Button 
+                        <Button
                           variant="outline"
                           onClick={() => setCurrentStep(2)}
                           className="border-viewheel-border"
                         >
                           Back
                         </Button>
-                        <Button 
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8"
-                        >
-                          <Send className="mr-2 h-4 w-4" />
-                          Pay & Submit Advertisement
-                        </Button>
-                        {/* The Pay button now lives inside ViewsCheckout. Keep this space clean. */}
                       </div>
                     </div>
                   )}

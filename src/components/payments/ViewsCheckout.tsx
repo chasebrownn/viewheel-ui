@@ -232,41 +232,27 @@ export default function ViewsCheckout({
   return (
     <Card className="bg-viewheel-card border-viewheel-border">
       <CardContent className="p-6">
-        <div className="flex items-start justify-between gap-6 flex-col md:flex-row">
-          <div className="space-y-2">
-            <div className="text-sm text-muted-foreground">Item</div>
-            <div className="text-lg font-semibold text-foreground">{label}</div>
-          </div>
-
-          <div className="text-right">
-            <div className="text-sm text-muted-foreground">Total</div>
-            <div className="text-3xl font-bold text-primary">
-              {amount.toLocaleString()} $VIEWS
-            </div>
-            {decimals != null && (
-              <div className="text-xs text-muted-foreground">decimals: {decimals}</div>
-            )}
-          </div>
-        </div>
 
         <div className="mt-6 grid gap-2 md:grid-cols-2">
           <div className="text-sm text-muted-foreground">
-            <div>
-              Paying from:{" "}
+            <p className="text-muted-foreground text-sm text-left">Paying from:</p>
+            <p className="text-foreground font-medium text-left">
               {publicKey ? `${publicKey.toBase58().slice(0, 4)}…${publicKey.toBase58().slice(-4)}` : "—"}
-            </div>
-            <div className="mt-1">
-              Balance: {loadingBalance ? "…" : `${formatToken(userBalanceRaw)} $VIEWS`}
-            </div>
+            </p>
+            <p className="mt-4 text-muted-foreground text-sm text-left">Balance:</p>
+            <p className="text-foreground font-medium text-left">
+              {loadingBalance ? "…" : `${formatToken(userBalanceRaw)} $VIEWS`}
+            </p>
           </div>
           <div className="text-sm text-muted-foreground md:text-right">
-            <div>
-              To treasury:{" "}
+            <p className="text-muted-foreground text-sm text-left md:text-right">To treasury:</p>
+            <p className="text-foreground font-medium text-left md:text-right">
               {treasury ? `${treasury.toBase58().slice(0, 4)}…${treasury.toBase58().slice(-4)}` : "—"}
-            </div>
-            <div className="mt-1">
-              Mint: {mint ? `${mint.toBase58().slice(0, 4)}…${mint.toBase58().slice(-4)}` : "—"}
-            </div>
+            </p>
+            <p className="mt-4 text-muted-foreground text-sm text-left md:text-right">Total Cost:</p>
+            <p className="text-foreground font-medium text-left md:text-right">
+              {amount.toLocaleString()} $VIEWS
+            </p>
           </div>
         </div>
 
@@ -276,7 +262,7 @@ export default function ViewsCheckout({
             disabled={!canPay || loading || !treasuryAddress || disabled}
             className="w-full md:w-auto px-8"
           >
-            {loading ? "Processing…" : `Pay ${amount.toLocaleString()} $VIEWS`}
+            {loading ? "Processing…" : "Pay & Submit"}
           </Button>
           {!connected && (
             <div className="text-sm text-red-400 mt-2">Connect your wallet to continue.</div>
